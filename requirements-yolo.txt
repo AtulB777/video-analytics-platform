@@ -1,0 +1,4 @@
+# Optional: real detection (large download; GPU build of torch recommended for speed)
+ultralytics>=8.2
+# Optional: ByteTrack adapter
+supervision>=0.20

@@ -1,0 +1,56 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: vap
+      POSTGRES_PASSWORD: vap
+      POSTGRES_DB: vap
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vap -d vap"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      args:
+        INSTALL_YOLO: "false"   # set to "true" and DETECTOR=yolo for real detection
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+psycopg2://vap:vap@db:5432/vap
+      AUTOSTART_SAMPLE: "true"
+      LOOP_VIDEO: "true"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./sample_videos:/srv/sample_videos
+      - ./configs:/srv/configs
+      - ./models:/srv/models
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  dashboard:
+    build:
+      context: .
+    command: ["streamlit", "run", "dashboard/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+    environment:
+      API_URL: http://api:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  pgdata:

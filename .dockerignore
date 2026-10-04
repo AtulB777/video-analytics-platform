@@ -1,0 +1,9 @@
+.git
+.env
+*.db
+__pycache__
+.pytest_cache
+tests
+docs
+sample_videos/*.mp4
+models
